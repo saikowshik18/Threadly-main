@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Verify Email - Threadly{% endblock %}
+
+{% block content %}
+<div style="max-width: 450px; margin: 4rem auto;">
+    <div class="glass-panel" style="text-align: center;">
+        <div style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;">
+            <i class="fas fa-envelope-open-text animate-pulse"></i>
+        </div>
+        <h2 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Verify Your Email</h2>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 2rem; line-height: 1.5;">
+            We've sent a 6-digit verification code to <strong>{{ user_email }}</strong>.<br>
+            Please enter it below to activate your account.
+        </p>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group" style="max-width: 250px; margin: 0 auto 1.5rem auto;">
+                <input type="text" name="code" class="form-input" placeholder="123456" 
+                       maxlength="6" required autocomplete="off"
+                       style="text-align: center; font-size: 2rem; letter-spacing: 0.3em; font-weight: 800; padding: 0.5rem 0;">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fas fa-check-circle"></i> Verify & Login
+            </button>
+        </form>
+
+        <p style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted);">
+            Didn't receive the email? Check your spam folder or look at the terminal output logs of the server running locally.
+        </p>
+    </div>
+</div>
+{% endblock %}

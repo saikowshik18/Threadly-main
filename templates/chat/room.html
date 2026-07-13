@@ -1,0 +1,327 @@
+{% extends 'base.html' %}
+{% block title %}Chat with {{ other_user.username }} - Threadly{% endblock %}
+
+{% block content %}
+<style>
+    /* Full-screen chat layout constraints */
+    html, body {
+        height: 100vh !important;
+        overflow: hidden !important;
+    }
+    main {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        padding: 1rem 1.5rem !important;
+        overflow: hidden !important;
+    }
+    .chat-container {
+        flex: 1 !important;
+        height: 100% !important;
+        margin: 0 !important;
+    }
+    .chat-main {
+        min-height: 0 !important;
+    }
+    .chat-messages {
+        min-height: 0 !important;
+    }
+    footer {
+        display: none !important;
+    }
+</style>
+<div class="chat-container">
+    <!-- Left Sidebar: Conversations list -->
+    <div class="chat-sidebar">
+        <div class="sidebar-header">
+            <h3 style="font-family: 'Outfit'; font-size: 1.25rem;">Conversations</h3>
+        </div>
+        <div class="room-list">
+            {% for data in sidebar_data %}
+                <a href="{% url 'chat_room' data.room.id %}" class="room-item {% if data.room.id == room.id %}active{% endif %}">
+                    {% if data.other_user.profile.avatar_url %}
+                        <img src="{{ data.other_user.profile.avatar_url }}" alt="avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
+                    {% else %}
+                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed={{ data.other_user.username }}" alt="avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
+                    {% endif %}
+                    
+                    <div class="room-info">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span class="room-title">{{ data.other_user.username }}</span>
+                            {% if data.last_message %}
+                                <span style="font-size: 0.65rem; color: var(--text-muted);">{{ data.last_message.timestamp|date:"M d" }}</span>
+                            {% endif %}
+                        </div>
+                        <span class="room-subtitle">Item: {{ data.room.item.title }}</span>
+                        <p class="room-last-msg">
+                            {% if data.last_message %}
+                                {{ data.last_message.content }}
+                            {% else %}
+                                No messages yet.
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    {% if data.unread_count > 0 and data.room.id != room.id %}
+                        <span class="badge" style="position: static;">{{ data.unread_count }}</span>
+                    {% endif %}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Right Chat Main: Chat Room Window -->
+    <div class="chat-main">
+        <!-- Room Header with Item detail card -->
+        <div class="chat-header">
+            <div style="display: flex; align-items: center; gap: 0.8rem;">
+                {% if other_user.profile.avatar_url %}
+                    <img src="{{ other_user.profile.avatar_url }}" alt="avatar" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+                {% else %}
+                    <img src="https://api.dicebear.com/7.x/bottts/svg?seed={{ other_user.username }}" alt="avatar" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+                {% endif %}
+                <div>
+                    <a href="{% url 'public_profile' other_user.username %}" style="font-weight: 700; font-size: 1rem;">
+                        {{ other_user.username }}
+                    </a>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary); display: block;"><i class="fas fa-university"></i> {{ other_user.profile.campus }}</span>
+                </div>
+            </div>
+            
+            <!-- Item Info Badge -->
+            <a href="{% url 'item_detail' room.item.id %}" class="glass-panel" style="padding: 0.4rem 0.8rem; border-radius: var(--radius-md); display: flex; align-items: center; gap: 0.6rem; font-size: 0.8rem; border-color: var(--primary-glow);">
+                <img src="{{ room.item.get_display_image }}" alt="item-thumb" style="width: 28px; height: 28px; border-radius: var(--radius-sm); object-fit: cover;">
+                <div>
+                    <span style="font-weight: 700; display: block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        {{ room.item.title }}
+                    </span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">
+                        {% if room.item.price %}
+                            ${{ room.item.price }}
+                        {% else %}
+                            Free
+                        {% endif %}
+                    </span>
+                </div>
+                <i class="fas fa-external-link-alt" style="font-size: 0.7rem; color: var(--text-muted);"></i>
+            </a>
+        </div>
+
+        <!-- Deal Status Banner -->
+        {% if room.item.status != 'Available' %}
+            <div style="background: rgba(16, 185, 129, 0.1); border-bottom: 1px solid rgba(16, 185, 129, 0.2); padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem; z-index: 10;">
+                <span style="color: #34d399; font-weight: 600;">
+                    <i class="fas fa-check-circle"></i> 
+                    {% if room.item.status == 'Sold' %}
+                        Sold to **{{ room.item.buyer.username }}** for **${{ room.item.price }}**
+                    {% elif room.item.status == 'Rented' %}
+                        Rented to **{{ room.item.buyer.username }}** for **${{ room.item.price }}**
+                    {% else %}
+                        Deal completed with **{{ room.item.buyer.username }}**
+                    {% endif %}
+                </span>
+                <span class="item-badge" style="position: static; font-size: 0.75rem; background: rgba(16, 185, 129, 0.2); border-color: #10b981; color: #34d399;">
+                    Completed
+                </span>
+            </div>
+        {% elif request.user == room.seller %}
+            <div style="background: rgba(99, 102, 241, 0.15); border-bottom: 1px solid rgba(99, 102, 241, 0.25); padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem; z-index: 10;">
+                <span style="color: #818cf8; font-weight: 600;">
+                    <i class="fas fa-info-circle"></i> Fix the deal with {{ room.buyer.username }}?
+                </span>
+                <button class="btn btn-primary btn-sm" id="complete-deal-btn" style="padding: 0.3rem 0.8rem; font-size: 0.85rem;">
+                    <i class="fas fa-handshake"></i> Complete Deal
+                </button>
+            </div>
+        {% endif %}
+
+        <!-- Message List panel -->
+        <div class="chat-messages" id="chat-messages-container">
+            {% if messages_list %}
+                {% for msg in messages_list %}
+                    <div class="msg-wrapper {% if msg.sender == request.user %}sent{% else %}received{% endif %}">
+                        <div class="msg-bubble">
+                            {{ msg.content }}
+                        </div>
+                        <span class="msg-meta">{{ msg.timestamp|date:"M d, H:i" }}</span>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div id="chat-empty-state" style="text-align: center; margin: auto; padding: 2rem; color: var(--text-muted); font-size: 0.9rem;">
+                    <i class="far fa-paper-plane" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 0.8rem;"></i>
+                    <p>Start the conversation! Type a message below to coordinate campus collection details.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Chat Input Form -->
+        <div class="chat-input-area">
+            <form id="chat-input-form" class="chat-input-form">
+                {% csrf_token %}
+                <input type="text" id="chat-message-input" class="form-input" placeholder="Type a message..." autocomplete="off" required style="flex: 1;">
+                <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">
+                    <i class="fas fa-paper-plane"></i> Send
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Complete Deal Modal -->
+<div id="complete-deal-modal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(6, 9, 19, 0.85); backdrop-filter: blur(8px); align-items: center; justify-content: center;">
+    <div class="glass-panel" style="max-width: 450px; width: 90%; padding: 2rem; position: relative; border-color: var(--primary-glow); box-shadow: var(--shadow-lg); background: var(--bg-surface-solid);">
+        <button id="close-modal-btn" style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; line-height: 1;">&times;</button>
+        <h3 style="font-family: 'Outfit'; font-size: 1.6rem; margin-bottom: 0.5rem; text-align: center; color: var(--text-primary); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <i class="fas fa-handshake" style="color: var(--primary);"></i> Complete Deal
+        </h3>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; text-align: center; margin-bottom: 1.5rem;">
+            Mark this listing as completed with <strong>{{ room.buyer.username }}</strong>.
+        </p>
+
+        <form action="{% url 'item_complete' room.item.id %}" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="buyer_id" value="{{ room.buyer.id }}">
+            
+            {% if room.item.listing_type == 'Sell' or room.item.listing_type == 'Rent' %}
+                <div class="form-group">
+                    <label class="form-label" for="final_price">Final {% if room.item.listing_type == 'Sell' %}Selling{% else %}Rental{% endif %} Price (USD)</label>
+                    <input type="number" name="final_price" id="final_price" class="form-input" step="0.01" value="{{ room.item.price|default:'0.00' }}" required style="background: rgba(6, 9, 19, 0.5);">
+                </div>
+            {% endif %}
+
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                    Confirm Deal
+                </button>
+                <button type="button" id="cancel-modal-btn" class="btn btn-secondary" style="flex: 1;">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const chatContainer = document.getElementById('chat-messages-container');
+        const messageForm = document.getElementById('chat-input-form');
+        const messageInput = document.getElementById('chat-message-input');
+        const roomId = "{{ room.id }}";
+        let lastMessageId = parseInt("{{ last_message_id|default:0 }}");
+
+        // Helper: Scroll chat to bottom
+        function scrollToBottom() {
+            setTimeout(() => {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 50);
+        }
+        scrollToBottom();
+
+        // AJAX Send Message
+        messageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = messageInput.value.trim();
+            if (!text) return;
+
+            const formData = new FormData();
+            formData.append('content', text);
+            formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+            messageInput.value = '';
+
+            try {
+                const response = await fetch(`/chat/room/${roomId}/send/`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        appendMessage(data.message.content, data.message.timestamp, true);
+                        lastMessageId = data.message.id;
+                        scrollToBottom();
+                        // Hide empty state
+                        const emptyState = document.getElementById('chat-empty-state');
+                        if (emptyState) emptyState.remove();
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to send message", err);
+            }
+        });
+
+        // Helper: Append Message bubble to UI
+        function appendMessage(content, timestamp, isSelf) {
+            const div = document.createElement('div');
+            div.className = `msg-wrapper ${isSelf ? 'sent' : 'received'}`;
+            div.innerHTML = `
+                <div class="msg-bubble">${escapeHTML(content)}</div>
+                <span class="msg-meta">${timestamp}</span>
+            `;
+            chatContainer.appendChild(div);
+        }
+
+        // Helper: HTML Escaper
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        // Dynamic Real-time Polling for new messages every 3 seconds
+        setInterval(async () => {
+            try {
+                const response = await fetch(`/chat/room/${roomId}/poll/?last_id=${lastMessageId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.messages && data.messages.length > 0) {
+                        data.messages.forEach(msg => {
+                            appendMessage(msg.content, msg.timestamp, msg.is_self);
+                        });
+                        lastMessageId = data.last_message_id;
+                        scrollToBottom();
+                        const emptyState = document.getElementById('chat-empty-state');
+                        if (emptyState) emptyState.remove();
+                    }
+                }
+            } catch (err) {
+                console.error("Error polling messages:", err);
+            }
+        }, 3000);
+        // Complete Deal Modal toggle logic
+        const completeDealBtn = document.getElementById('complete-deal-btn');
+        const completeModal = document.getElementById('complete-deal-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const cancelModalBtn = document.getElementById('cancel-modal-btn');
+
+        if (completeDealBtn && completeModal) {
+            completeDealBtn.addEventListener('click', () => {
+                completeModal.style.display = 'flex';
+            });
+
+            const hideModal = () => {
+                completeModal.style.display = 'none';
+            };
+
+            closeModalBtn.addEventListener('click', hideModal);
+            cancelModalBtn.addEventListener('click', hideModal);
+
+            // Close on clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target === completeModal) {
+                    hideModal();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

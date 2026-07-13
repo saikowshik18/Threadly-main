@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block title %}{{ action }} - Threadly{% endblock %}
+
+{% block content %}
+<div style="max-width: 650px; margin: 2rem auto;">
+    <div class="glass-panel">
+        <h2 style="font-size: 2rem; margin-bottom: 0.5rem; text-align: center; font-family: 'Outfit';">{{ action }}</h2>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; text-align: center; margin-bottom: 2rem;">
+            List books, electronics, lab gear, furniture, or other items with your campus peers.
+        </p>
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label class="form-label" for="id_title">Item Title</label>
+                <input type="text" name="title" id="id_title" class="form-input" placeholder="e.g. Calculus Early Transcendentals 8th Edition" value="{{ values.title|default:'' }}" required>
+                {% if errors.title %}
+                    <span style="color: var(--danger); font-size: 0.8rem;">{{ errors.title }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="id_description">Description</label>
+                <textarea name="description" id="id_description" class="form-input text-area" placeholder="Describe the item condition, pickup location, rental terms, etc." rows="4" required>{{ values.description|default:'' }}</textarea>
+                {% if errors.description %}
+                    <span style="color: var(--danger); font-size: 0.8rem;">{{ errors.description }}</span>
+                {% endif %}
+            </div>
+
+            <div class="grid-cols-2" style="gap: 1rem; margin-bottom: 1.25rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="id_category">Category</label>
+                    <select name="category" id="id_category" class="form-input" required>
+                        <option value="">Select Category</option>
+                        {% for key, val in categories %}
+                            <option value="{{ key }}" {% if values.category == key %}selected{% endif %}>{{ val }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if errors.category %}
+                        <span style="color: var(--danger); font-size: 0.8rem;">{{ errors.category }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="id_listing_type">Deal Type</label>
+                    <select name="listing_type" id="id_listing_type" class="form-input" required>
+                        <option value="">Select Deal Type</option>
+                        {% for key, val in listing_types %}
+                            <option value="{{ key }}" {% if values.listing_type == key %}selected{% endif %}>{{ val }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if errors.listing_type %}
+                        <span style="color: var(--danger); font-size: 0.8rem;">{{ errors.listing_type }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="grid-cols-2" style="gap: 1rem; margin-bottom: 1.25rem;">
+                <div class="form-group" style="margin-bottom: 0;" id="price-container">
+                    <label class="form-label" for="id_price">Price (USD)</label>
+                    <input type="number" name="price" id="id_price" class="form-input" placeholder="Price (leave blank for free/exchange)" step="0.01" value="{{ values.price|default:'' }}">
+                    {% if errors.price %}
+                        <span style="color: var(--danger); font-size: 0.8rem;">{{ errors.price }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="id_condition">Condition</label>
+                    <select name="condition" id="id_condition" class="form-input" required>
+                        <option value="">Select Condition</option>
+                        {% for key, val in conditions %}
+                            <option value="{{ key }}" {% if values.condition == key %}selected{% endif %}>{{ val }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if errors.condition %}
+                        <span style="color: var(--danger); font-size: 0.8rem;">{{ errors.condition }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="id_image">Upload Image</label>
+                <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; display: flex; align-items: center; justify-content: space-between;">
+                    <input type="file" name="image" id="id_image" accept="image/*" style="font-size: 0.85rem; color: var(--text-secondary);">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="id_image_url">Demo Image URL (Alternative)</label>
+                <input type="url" name="image_url" id="id_image_url" class="form-input" placeholder="Optional: Demo image URL (e.g. Unsplash)" value="{{ values.image_url|default:'' }}">
+                {% if errors.image_url %}
+                    <span style="color: var(--danger); font-size: 0.8rem;">{{ errors.image_url }}</span>
+                {% endif %}
+                <span style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.3rem;">
+                    Instead of uploading, you can paste an image URL (e.g. from unsplash.com) for quick demo visualization.
+                </span>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                    <i class="fas fa-paper-plane"></i> Publish Listing
+                </button>
+                <a href="{% if item %}{% url 'item_detail' item.id %}{% else %}{% url 'home' %}{% endif %}" class="btn btn-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const typeSelect = document.getElementById('id_listing_type');
+        const priceContainer = document.getElementById('price-container');
+        const priceInput = document.getElementById('id_price');
+
+        function togglePriceField() {
+            const val = typeSelect.value;
+            if (val === 'Exchange' || val === 'Share') {
+                priceInput.value = '';
+                priceInput.disabled = true;
+                priceContainer.style.opacity = '0.5';
+            } else {
+                priceInput.disabled = false;
+                priceContainer.style.opacity = '1';
+            }
+        }
+
+        typeSelect.addEventListener('change', togglePriceField);
+        togglePriceField(); // Run initially
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% block title %}{{ item.title }} - Threadly{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <a href="{% url 'home' %}" style="color: var(--text-secondary); font-size: 0.9rem; font-weight: 600;">
+        <i class="fas fa-chevron-left"></i> Back to Marketplace
+    </a>
+</div>
+
+<div class="details-layout" style="margin-bottom: 3rem;">
+    <!-- Left: Image -->
+    <div class="details-image-container glass-panel" style="padding: 0;">
+        <img src="{{ item.get_display_image }}" alt="{{ item.title }}" class="details-image">
+    </div>
+
+    <!-- Right: Info -->
+    <div class="glass-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+                <div>
+                    <span class="item-card-category" style="font-size: 0.85rem; letter-spacing: 0.08em;">
+                        {{ item.get_category_display }}
+                    </span>
+                    <h1 style="font-size: 2.2rem; margin-top: 0.2rem; font-family: 'Outfit';">{{ item.title }}</h1>
+                </div>
+                
+                {% if request.user.is_authenticated %}
+                    <button class="save-btn {% if is_saved %}active{% endif %}" data-id="{{ item.id }}" style="position: static; font-size: 1.1rem; width: 40px; height: 40px;">
+                        <i class="{% if is_saved %}fas{% else %}far{% endif %} fa-bookmark"></i>
+                    </button>
+                {% endif %}
+            </div>
+
+            <!-- Price & Status Badge -->
+            <div style="display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0;">
+                <span style="font-family: 'Outfit'; font-size: 2rem; font-weight: 800;">
+                    {% if item.price %}
+                        ${{ item.price }}
+                    {% else %}
+                        <span class="free" style="color: var(--success);">Free / Exchange</span>
+                    {% endif %}
+                </span>
+                <span class="item-badge type-{{ item.listing_type|lower }}" style="position: static; font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                    {{ item.get_listing_type_display }}
+                </span>
+                <span class="item-badge" style="position: static; font-size: 0.85rem; padding: 0.4rem 0.8rem; 
+                    {% if item.status == 'Sold' %}
+                        background: rgba(239, 68, 68, 0.15); border-color: var(--danger); color: #f87171;
+                    {% elif item.status == 'Rented' %}
+                        background: rgba(168, 85, 247, 0.15); border-color: var(--secondary); color: #c084fc;
+                    {% elif item.status == 'Inactive' %}
+                        background: rgba(100, 116, 139, 0.15); border-color: var(--text-muted); color: var(--text-secondary);
+                    {% else %}
+                        background: rgba(16, 185, 129, 0.15); border-color: var(--success); color: #34d399;
+                    {% endif %}
+                ">
+                    {{ item.get_status_display }}
+                </span>
+            </div>
+
+            {% if item.status != 'Available' and item.buyer %}
+                <div class="glass-panel" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25); padding: 1rem 1.25rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; hover: none;">
+                    <i class="fas fa-check-circle" style="color: var(--success); font-size: 1.5rem;"></i>
+                    <div>
+                        <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; display: block;">Deal Status</span>
+                        <span style="font-size: 0.95rem; color: var(--text-primary); font-weight: 600;">
+                            {% if item.status == 'Sold' %}
+                                Sold to <strong><a href="{% url 'public_profile' item.buyer.username %}" style="color: var(--primary);">{{ item.buyer.username }}</a></strong> for <strong>${{ item.price }}</strong>
+                            {% elif item.status == 'Rented' %}
+                                Rented to <strong><a href="{% url 'public_profile' item.buyer.username %}" style="color: var(--primary);">{{ item.buyer.username }}</a></strong> for <strong>${{ item.price }}</strong>
+                            {% else %}
+                                Exchanged / Shared with <strong><a href="{% url 'public_profile' item.buyer.username %}" style="color: var(--primary);">{{ item.buyer.username }}</a></strong>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            {% endif %}
+
+            <p style="color: var(--text-secondary); line-height: 1.6; font-size: 1rem; margin-bottom: 2rem;">
+                {{ item.description }}
+            </p>
+
+            <!-- Meta Attributes Grid -->
+            <div class="meta-info-row">
+                <div class="meta-info-item">
+                    <span class="meta-info-label">Condition</span>
+                    <span class="meta-info-val">{{ item.get_condition_display }}</span>
+                </div>
+                <div class="meta-info-item">
+                    <span class="meta-info-label">Listed on</span>
+                    <span class="meta-info-val">{{ item.created_at|date:"M d, Y" }}</span>
+                </div>
+                <div class="meta-info-item">
+                    <span class="meta-info-label">Campus Location</span>
+                    <span class="meta-info-val">{{ item.owner.profile.campus }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <!-- Seller Card -->
+            <div class="glass-panel" style="padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; background: rgba(255,255,255,0.02);">
+                <div style="display: flex; align-items: center; gap: 0.8rem;">
+                    <a href="{% url 'public_profile' item.owner.username %}">
+                        {% if item.owner.profile.avatar_url %}
+                            <img src="{{ item.owner.profile.avatar_url }}" alt="{{ item.owner.username }}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);">
+                        {% else %}
+                            <img src="https://api.dicebear.com/7.x/bottts/svg?seed={{ item.owner.username }}" alt="{{ item.owner.username }}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);">
+                        {% endif %}
+                    </a>
+                    <div>
+                        <span style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: block;">Seller</span>
+                        <a href="{% url 'public_profile' item.owner.username %}" style="font-weight: 700; font-size: 1rem; color: var(--text-primary);">
+                            {{ item.owner.username }}
+                        </a>
+                        <span style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-top: 0.15rem;">
+                            <i class="fas fa-star" style="color: var(--warning); font-size: 0.7rem;"></i> {{ item.owner.rating }} Rating
+                        </span>
+                    </div>
+                </div>
+                                <span class="item-card-user"><i class="fas fa-university"></i> {{ item.owner.profile.campus }}</span>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 1rem;">
+                {% if request.user.is_authenticated %}
+                    {% if request.user == item.owner %}
+                        <a href="{% url 'item_update' item.id %}" class="btn btn-primary" style="flex: 1;">
+                            <i class="fas fa-edit"></i> Edit Listing
+                        </a>
+                        <a href="{% url 'item_delete' item.id %}" class="btn btn-danger">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </a>
+                    {% else %}
+                        <!-- This form initiates a chat with the seller -->
+                        <form action="{% url 'chat_start' item.id %}" method="POST" style="width: 100%; display: flex;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                <i class="fas fa-comments"></i> Contact Seller / Chat
+                            </button>
+                        </form>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-comments"></i> Log in to Contact Seller
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Related Recommendations -->
+{% if recommendations %}
+<div style="margin-top: 4rem;">
+    <h3 style="font-family: 'Outfit'; font-size: 1.6rem; margin-bottom: 1.5rem;">Similar Listings in {{ item.get_category_display }}</h3>
+    <div class="grid-cols-4">
+        {% for rec in recommendations %}
+            <div class="item-card">
+                <a href="{% url 'item_detail' rec.id %}" style="display: block; flex-grow: 1; height: 100%;">
+                    <div class="item-card-image-wrapper">
+                        <img src="{{ rec.get_display_image }}" class="item-card-image" alt="{{ rec.title }}">
+                        <span class="item-badge type-{{ rec.listing_type|lower }}">{{ rec.get_listing_type_display }}</span>
+                    </div>
+                    
+                    <div class="item-card-body">
+                        <span class="item-card-category">{{ rec.get_category_display }}</span>
+                        <h4 class="item-card-title">{{ rec.title }}</h4>
+                        
+                        <div class="item-card-footer">
+                            <span class="item-card-price">
+                                {% if rec.price %}
+                                    ${{ rec.price }}
+                                {% else %}
+                                    <span class="free">Free / Exchange</span>
+                                {% endif %}
+                            </span>
+                            <span class="item-card-user"><i class="fas fa-map-marker-alt"></i> {{ rec.owner.profile.campus }}</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

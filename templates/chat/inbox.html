@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Chat Inbox - Threadly{% endblock %}
+
+{% block content %}
+<style>
+    /* Full-screen chat layout constraints */
+    html, body {
+        height: 100vh !important;
+        overflow: hidden !important;
+    }
+    main {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        padding: 1rem 1.5rem !important;
+        overflow: hidden !important;
+    }
+    .chat-container {
+        flex: 1 !important;
+        height: 100% !important;
+        margin: 0 !important;
+    }
+    .chat-main {
+        min-height: 0 !important;
+    }
+    .chat-messages {
+        min-height: 0 !important;
+    }
+    footer {
+        display: none !important;
+    }
+</style>
+<div class="chat-container">
+    <!-- Left Sidebar: Conversations list -->
+    <div class="chat-sidebar">
+        <div class="sidebar-header">
+            <h3 style="font-family: 'Outfit'; font-size: 1.25rem;">Conversations</h3>
+        </div>
+        <div class="room-list">
+            {% if rooms_data %}
+                {% for data in rooms_data %}
+                    <a href="{% url 'chat_room' data.room.id %}" class="room-item">
+                        {% if data.other_user.profile.avatar_url %}
+                            <img src="{{ data.other_user.profile.avatar_url }}" alt="avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
+                        {% else %}
+                            <img src="https://api.dicebear.com/7.x/bottts/svg?seed={{ data.other_user.username }}" alt="avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
+                        {% endif %}
+                        
+                        <div class="room-info">
+                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                                <span class="room-title">{{ data.other_user.username }}</span>
+                                {% if data.last_message %}
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">{{ data.last_message.timestamp|date:"M d" }}</span>
+                                {% endif %}
+                            </div>
+                            <span class="room-subtitle">Item: {{ data.room.item.title }}</span>
+                            <p class="room-last-msg">
+                                {% if data.last_message %}
+                                    {{ data.last_message.content }}
+                                {% else %}
+                                    No messages yet.
+                                {% endif %}
+                            </p>
+                        </div>
+                        
+                        {% if data.unread_count > 0 %}
+                            <span class="badge" style="position: static;">{{ data.unread_count }}</span>
+                        {% endif %}
+                    </a>
+                {% endfor %}
+            {% else %}
+                <p style="padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+                    No active chats.
+                </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Chat Main: Placeholder -->
+    <div class="chat-main" style="align-items: center; justify-content: center; padding: 2rem; text-align: center; background: rgba(15, 23, 42, 0.1);">
+        <i class="far fa-comments" style="font-size: 4rem; color: var(--primary); opacity: 0.6; margin-bottom: 1.25rem;"></i>
+        <h3 style="font-family: 'Outfit'; font-size: 1.6rem; margin-bottom: 0.5rem;">Your Messages</h3>
+        <p style="color: var(--text-secondary); max-width: 400px; margin: 0 auto; font-size: 0.95rem; line-height: 1.5;">
+            Choose a student conversation from the sidebar to coordinate item collection, trading terms, or billing shares.
+        </p>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem;">
+            To start a new chat, find an item in the <a href="{% url 'home' %}" style="color: var(--primary); font-weight: 600;">Marketplace</a> and click <strong>Contact Seller</strong>.
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}OTT Subscription Sharing - Threadly{% endblock %}
+
+{% block content %}
+<div class="glass-panel" style="margin-bottom: 2rem; padding: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+        <div>
+            <h1 style="font-size: 2.2rem; font-family: 'Outfit'; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                OTT Subscription Sharing
+            </h1>
+            <p style="color: var(--text-secondary); margin-top: 0.2rem; font-size: 0.95rem;">
+                Split billing costs for streaming services with verified students on campus.
+            </p>
+        </div>
+        <a href="{% url 'ott_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle"></i> Share A Subscription
+        </a>
+    </div>
+
+    <!-- Filter Categories -->
+    <div style="display: flex; gap: 0.6rem; overflow-x: auto; padding: 0.3rem 0; scrollbar-width: none;">
+        <a href="?platform=All" class="category-tab {% if selected_platform == 'All' %}active{% endif %}">All Platforms</a>
+        <a href="?platform=Netflix" class="category-tab {% if selected_platform == 'Netflix' %}active{% endif %}">Netflix</a>
+        <a href="?platform=Spotify" class="category-tab {% if selected_platform == 'Spotify' %}active{% endif %}">Spotify</a>
+        <a href="?platform=YouTube Premium" class="category-tab {% if selected_platform == 'YouTube Premium' %}active{% endif %}">YouTube Premium</a>
+        <a href="?platform=Prime Video" class="category-tab {% if selected_platform == 'Prime Video' %}active{% endif %}">Amazon Prime Video</a>
+        <a href="?platform=Disney%2B" class="category-tab {% if selected_platform == 'Disney+' %}active{% endif %}">Disney+</a>
+        <a href="?platform=HBO Max" class="category-tab {% if selected_platform == 'HBO Max' %}active{% endif %}">HBO Max</a>
+        <a href="?platform=Other" class="category-tab {% if selected_platform == 'Other' %}active{% endif %}">Other</a>
+    </div>
+</div>
+
+<!-- Subscription Grid -->
+{% if subscriptions %}
+    <div class="grid-cols-3">
+        {% for sub in subscriptions %}
+            <div class="ott-card">
+                <!-- Platform Badge -->
+                <span class="ott-badge {{ sub.platform|lower|cut:' ' }}">{{ sub.platform }}</span>
+                
+                <h3 class="ott-platform" style="font-family: 'Outfit'; font-size: 1.4rem; padding-right: 80px;">{{ sub.platform }}</h3>
+                <span class="ott-plan">{{ sub.plan_name }}</span>
+
+                <div class="ott-slots-info" style="margin-top: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.3rem;">
+                        <span style="color: var(--text-secondary);">Available Slots</span>
+                        <span style="font-weight: 700; color: var(--primary);">{{ sub.get_available_slots }} / {{ sub.total_slots }} free</span>
+                    </div>
+                    <!-- Visual Progress Bar -->
+                    <div class="slots-bar">
+                        <!-- Fill ratio: width = (total - available) / total * 100 -->
+                        <div class="slots-bar-fill" style="width: calc((1 - ({{ sub.get_available_slots }} / {{ sub.total_slots }})) * 100%);"></div>
+                    </div>
+                </div>
+
+                <div style="margin: 1rem 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                    {{ sub.description|default:"No special description shared. Click View Details for payment methods." }}
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.06);">
+                    <div>
+                        <div class="ott-price">${{ sub.price_per_slot }}</div>
+                        <span class="ott-cycle">per {{ sub.billing_cycle|lower }}</span>
+                    </div>
+                    
+                    <a href="{% url 'ott_detail' sub.id %}" class="btn btn-secondary btn-sm">
+                        View Details
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="glass-panel" style="text-align: center; padding: 4rem 2rem;">
+        <i class="fas fa-tv" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem; opacity: 0.7;"></i>
+        <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">No Shares Available</h3>
+        <p style="color: var(--text-secondary); max-width: 400px; margin: 0 auto 1.5rem auto;">
+            There are no subscription groups running for this category. Start a group to split costs!
+        </p>
+        <a href="{% url 'ott_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Host A Group
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

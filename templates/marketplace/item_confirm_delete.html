@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Delete {{ item.title }} - Threadly{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 4rem auto;">
+    <div class="glass-panel" style="text-align: center;">
+        <div style="font-size: 3rem; color: var(--danger); margin-bottom: 1rem;">
+            <i class="fas fa-exclamation-triangle animate-bounce"></i>
+        </div>
+        <h2 style="font-size: 2rem; margin-bottom: 0.5rem; font-family: 'Outfit';">Are you absolutely sure?</h2>
+        <p style="color: var(--text-secondary); line-height: 1.5; margin-bottom: 2rem;">
+            You are about to permanently delete your listing for <strong>"{{ item.title }}"</strong>.<br>
+            This action cannot be undone.
+        </p>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <button type="submit" class="btn btn-danger" style="flex: 1;">
+                    <i class="fas fa-trash-alt"></i> Yes, Delete Listing
+                </button>
+                <a href="{% url 'item_detail' item.id %}" class="btn btn-secondary" style="flex: 1;">
+                    No, Keep Listing
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

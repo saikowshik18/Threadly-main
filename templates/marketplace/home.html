@@ -1,0 +1,151 @@
+<!-- {% extends 'base.html' %} -->
+{% block title %}Campus Marketplace - Threadly{% endblock %}
+
+{% block content %}
+<div class="glass-panel" style="margin-bottom: 2rem; padding: 1.5rem;">
+    <!-- Welcome Header -->
+    <div
+        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+        <div>
+            <h1
+                style="font-size: 2.2rem; font-family: 'Outfit'; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Campus Marketplace
+            </h1>
+            <p style="color: var(--text-secondary); margin-top: 0.2rem; font-size: 0.95rem;">
+                Buy, sell, rent, or exchange goods with fellow verified students.
+            </p>
+        </div>
+        <a href="{% url 'item_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle"></i> Post A Listing
+        </a>
+    </div>
+
+    <!-- Search and Filters Form -->
+    <form method="GET" action="{% url 'home' %}">
+        <!-- Hidden category to keep category selection active -->
+        <input type="hidden" name="category" value="{{ selected_category }}">
+
+        <div class="search-filter-panel">
+            <div class="form-group" style="margin-bottom: 0;">
+                <input type="text" name="q" class="form-input" placeholder="What are you looking for today?..."
+                    value="{{ q }}">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <select name="type" class="form-input" onchange="this.form.submit()">
+                    <option value="">All Deal Types</option>
+                    {% for key, val in listing_types %}
+                    <option value="{{ key }}" {% if selected_type==key %}selected{% endif %}>{{ val }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <select name="condition" class="form-input" onchange="this.form.submit()">
+                    <option value="">Any Condition</option>
+                    {% for key, val in conditions %}
+                    <option value="{{ key }}" {% if selected_condition==key %}selected{% endif %}>{{ val }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <select name="sort" class="form-input" onchange="this.form.submit()">
+                    <option value="">Newest First</option>
+                    <option value="price_asc" {% if sort=='price_asc' %}selected{% endif %}>Price: Low to High</option>
+                    <option value="price_desc" {% if sort=='price_desc' %}selected{% endif %}>Price: High to Low
+                    </option>
+                    <option value="oldest" {% if sort=='oldest' %}selected{% endif %}>Oldest First</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="height: 100%; padding: 0.5rem 1rem;">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </div>
+
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 0.85rem; color: var(--text-secondary);">Price:</span>
+                <input type="number" name="min_price" class="form-input" placeholder="Min"
+                    style="width: 80px; padding: 0.4rem 0.6rem; font-size: 0.85rem;" value="{{ min_price }}">
+                <span style="color: var(--text-muted);">to</span>
+                <input type="number" name="max_price" class="form-input" placeholder="Max"
+                    style="width: 80px; padding: 0.4rem 0.6rem; font-size: 0.85rem;" value="{{ max_price }}">
+            </div>
+            {% if q or selected_type or selected_condition or min_price or max_price or selected_category != 'All' or
+            sort %}
+            <a href="{% url 'home' %}" style="font-size: 0.85rem; color: var(--danger); font-weight: 600;"><i
+                    class="fas fa-times-circle"></i> Clear All Filters</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Category Tabs -->
+<div class="category-tabs">
+    <a href="?category=All&q={{ q }}&type={{ selected_type }}&condition={{ selected_condition }}&min_price={{ min_price }}&max_price={{ max_price }}&sort={{ sort }}"
+        class="category-tab {% if selected_category == 'All' %}active{% endif %}">
+        All Categories
+    </a>
+    {% for key, val in categories %}
+    <a href="?category={{ key }}&q={{ q }}&type={{ selected_type }}&condition={{ selected_condition }}&min_price={{ min_price }}&max_price={{ max_price }}&sort={{ sort }}"
+        class="category-tab {% if selected_category == key %}active{% endif %}">
+        {{ val }}
+    </a>
+    {% endfor %}
+</div>
+
+<!-- Items Grid -->
+{% if items %}
+<div class="grid-cols-4">
+    {% for item in items %}
+    <div class="item-card">
+        {% if request.user.is_authenticated %}
+        <button class="save-btn {% if item.id in saved_ids %}active{% endif %}" data-id="{{ item.id }}">
+            <i class="{% if item.id in saved_ids %}fas{% else %}far{% endif %} fa-bookmark"></i>
+        </button>
+        {% else %}
+        <a href="{% url 'login' %}" class="save-btn"><i class="far fa-bookmark"></i></a>
+        {% endif %}
+
+        <a href="{% url 'item_detail' item.id %}" style="display: block; flex-grow: 1; height: 100%;">
+            <div class="item-card-image-wrapper">
+                <img src="{{ item.get_display_image }}" class="item-card-image" alt="{{ item.title }}">
+                <span class="item-badge type-{{ item.listing_type|lower }}">{{ item.get_listing_type_display }}</span>
+            </div>
+
+            <div class="item-card-body">
+                <span class="item-card-category">{{ item.get_category_display }}</span>
+                <h4 class="item-card-title" title="{{ item.title }}">{{ item.title }}</h4>
+
+                <div class="item-card-footer">
+                    <span class="item-card-price">
+                        {% if item.price %}
+                        ${{ item.price }}
+                        {% else %}
+                        <span class="free">Free / Exchange</span>
+                        {% endif %}
+                    </span>
+                    <span class="item-card-user"><i class="fas fa-map-marker-alt"></i> {{ item.owner.profile.campus
+                        }}</span>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="glass-panel" style="text-align: center; padding: 4rem 2rem;">
+    <i class="fas fa-search" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem; opacity: 0.7;"></i>
+    <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">No Listings Found</h3>
+    <p style="color: var(--text-secondary); max-width: 400px; margin: 0 auto 1.5rem auto;">
+        We couldn't find any items matching your filters. Try clearing some search values or be the first to post this
+        item!
+    </p>
+    <a href="{% url 'item_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Post An Item
+    </a>
+</div>
+{% endif %}
+{% endblock %}

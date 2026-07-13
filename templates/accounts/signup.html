@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}Sign Up - Threadly{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 2rem auto;">
+    <div class="glass-panel">
+        <h2 style="font-size: 2rem; margin-bottom: 0.5rem; text-align: center;">Join Threadly</h2>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; text-align: center; margin-bottom: 2rem;">
+            Only college students with a verified .edu email can register.
+        </p>
+
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label class="form-label" for="username">Username</label>
+                <input type="text" name="username" id="username" class="form-input" placeholder="john_doe" value="{{ values.username|default:'' }}" required>
+                {% if errors.username %}
+                    <span style="color: var(--danger); font-size: 0.8rem;">{{ errors.username }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="email">Institutional Email (.edu or rguktrkv.ac.in)</label>
+                <input type="email" name="email" id="email" class="form-input" placeholder="r210105@rguktrkv.ac.in" value="{{ values.email|default:'' }}" required>
+                {% if errors.email %}
+                    <span style="color: var(--danger); font-size: 0.8rem;">{{ errors.email }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="campus">Campus / Location</label>
+                <input type="text" name="campus" id="campus" class="form-input" placeholder="Main Campus / North Campus" value="{{ values.campus|default:'' }}">
+                {% if errors.campus %}
+                    <span style="color: var(--danger); font-size: 0.8rem;">{{ errors.campus }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="bio">Short Bio (Optional)</label>
+                <textarea name="bio" id="bio" class="form-input text-area" placeholder="Tell us about yourself..." rows="3">{{ values.bio|default:'' }}</textarea>
+                {% if errors.bio %}
+                    <span style="color: var(--danger); font-size: 0.8rem;">{{ errors.bio }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <input type="password" name="password" id="password" class="form-input" placeholder="••••••••" required>
+                {% if errors.password %}
+                    <span style="color: var(--danger); font-size: 0.8rem;">{{ errors.password }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="confirm_password">Confirm Password</label>
+                <input type="password" name="confirm_password" id="confirm_password" class="form-input" placeholder="••••••••" required>
+                {% if errors.confirm_password %}
+                    <span style="color: var(--danger); font-size: 0.8rem;">{{ errors.confirm_password }}</span>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                <i class="fas fa-user-plus"></i> Create Account
+            </button>
+        </form>
+
+        <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-secondary);">
+            Already have an account? <a href="{% url 'login' %}" style="color: var(--primary); font-weight: 600;">Log In</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
